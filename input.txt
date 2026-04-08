@@ -1,0 +1,4 @@
+dhoro x = 100
+dhoro y = 25
+dekhao x - y
+dekhao x * y
