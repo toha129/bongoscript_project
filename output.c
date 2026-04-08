@@ -1,8 +1,6 @@
 #include <stdio.h>
 int main() {
-int x = 100;
-int y = 25;
-printf("%d\n", x - y);
-printf("%d\n", x * y);
+int a;
+int b;
 return 0;
 }

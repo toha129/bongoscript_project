@@ -1,4 +1,10 @@
-dhoro x = 100
-dhoro y = 25
-dekhao x - y
-dekhao x * y
+dhoro a
+dhoro b
+
+nao a
+nao b
+
+jodi a > b:
+    dekhao a
+nahole:
+    dekhao b

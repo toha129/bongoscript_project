@@ -10,7 +10,9 @@ app.use(express.static(__dirname));
 app.post("/compile", (req, res) => {
     // Ensure Unix-style line endings (LF) for the parser
     const code = req.body.code.replace(/\r\n/g, '\n');
+    const userInput = (req.body.userInput || '').replace(/\r\n/g, '\n');
     fs.writeFileSync("input.txt", code + '\n');
+    fs.writeFileSync("user_input.txt", userInput);
 
     // Step 1: Translate BongoScript -> C
     const translateCmd = 'cmd /c "banglish.exe < input.txt"';
