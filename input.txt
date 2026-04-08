@@ -1,10 +1,3 @@
 dhoro a
-dhoro b
-
 nao a
-nao b
-
-jodi a > b:
-    dekhao a
-nahole:
-    dekhao b
+dekhao a

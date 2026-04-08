@@ -1,36 +1,128 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const fs = require("fs");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const path = require("path");
 
 const app = express();
-app.use(express.json());
+const server = http.createServer(app);
+const io = new Server(server);
+
 app.use(express.static(__dirname));
 
-app.post("/compile", (req, res) => {
-    // Ensure Unix-style line endings (LF) for the parser
-    const code = req.body.code.replace(/\r\n/g, '\n');
-    const userInput = (req.body.userInput || '').replace(/\r\n/g, '\n');
-    fs.writeFileSync("input.txt", code + '\n');
-    fs.writeFileSync("user_input.txt", userInput);
+const BASH = "C:\\msys64\\usr\\bin\\bash.exe";
+const PROJECT = "/d/Games/Compressed/bongoscript_project";
 
-    // Step 1: Translate BongoScript -> C
-    const translateCmd = 'cmd /c "banglish.exe < input.txt"';
-    exec(translateCmd, { cwd: __dirname }, (err1) => {
-        if (err1) {
-            return res.status(500).send(`Translation Error: ${err1.message}`);
-        }
+io.on("connection", (socket) => {
+    let proc = null;
+    let killTimer = null;
 
-        // Step 2: Compile output.c and run it via MSYS2 bash
-        const bashPath = 'C:\\msys64\\usr\\bin\\bash.exe';
-        const scriptPath = path.join(__dirname, 'compile_and_run.sh');
-        exec(`"${bashPath}" -l "${scriptPath}"`, { cwd: __dirname, timeout: 10000 }, (err2, stdout, stderr) => {
-            if (err2) {
-                return res.status(500).send(`Error: ${stderr || err2.message}`);
+    socket.on("run", (data) => {
+        // Kill any previous process
+        if (proc) { proc.kill(); proc = null; }
+        clearTimeout(killTimer);
+
+        const code = (data.code || "").replace(/\r\n/g, "\n");
+        fs.writeFileSync("input.txt", code + "\n");
+
+        // Step 1: Transpile BongoScript -> C
+        const translateCmd = 'cmd /c "banglish.exe < input.txt"';
+        exec(translateCmd, { cwd: __dirname }, (err1, stdout1, stderr1) => {
+            const translationOutput = (stdout1 || "") + (stderr1 || "");
+
+            // Check if output.c was actually generated/updated
+            if (err1) {
+                socket.emit("output", `Translation Error: ${err1.message}`);
+                socket.emit("done", 1);
+                return;
             }
-            res.send(stdout);
+
+            // Check if output.c exists and has content
+            try {
+                const outputC = fs.readFileSync(path.join(__dirname, "output.c"), "utf8");
+                if (!outputC.trim()) {
+                    socket.emit("output", "Translation Error: Generated C code is empty.");
+                    socket.emit("done", 1);
+                    return;
+                }
+            } catch (e) {
+                socket.emit("output", "Translation Error: output.c not found.");
+                socket.emit("done", 1);
+                return;
+            }
+
+            // Step 2: Compile with GCC via MSYS2
+            const compileCmd = `"${BASH}" -lc "cd ${PROJECT} && gcc output.c -o runme.exe 2>&1"`;
+            exec(compileCmd, { cwd: __dirname, timeout: 10000 }, (err2, stdout2) => {
+                if (err2) {
+                    socket.emit("output", `Compile Error:\n${stdout2 || err2.message}`);
+                    socket.emit("done", 1);
+                    return;
+                }
+
+                // Step 3: Run interactively through bash so MSYS2 handles stdin properly
+                socket.emit("started");
+
+                proc = spawn(BASH, ["-c", `cd ${PROJECT} && ./runme.exe`], {
+                    cwd: __dirname,
+                    stdio: ["pipe", "pipe", "pipe"],
+                    env: { ...process.env, MSYS_NO_PATHCONV: "1" }
+                });
+
+                // 30s timeout
+                killTimer = setTimeout(() => {
+                    if (proc) {
+                        proc.kill();
+                        socket.emit("output", "\n[Timed out after 30s]");
+                        socket.emit("done", 1);
+                    }
+                }, 30000);
+
+                proc.stdout.on("data", (chunk) => {
+                    socket.emit("output", chunk.toString());
+                });
+
+                proc.stderr.on("data", (chunk) => {
+                    socket.emit("output", chunk.toString());
+                });
+
+                proc.on("close", (exitCode) => {
+                    clearTimeout(killTimer);
+                    proc = null;
+                    socket.emit("done", exitCode || 0);
+                });
+
+                proc.on("error", (err) => {
+                    clearTimeout(killTimer);
+                    proc = null;
+                    socket.emit("output", `Runtime Error: ${err.message}`);
+                    socket.emit("done", 1);
+                });
+            });
         });
+    });
+
+    socket.on("input", (text) => {
+        if (proc && proc.stdin.writable) {
+            proc.stdin.write(text + "\n");
+        }
+    });
+
+    socket.on("kill", () => {
+        if (proc) {
+            clearTimeout(killTimer);
+            proc.kill();
+            proc = null;
+            socket.emit("output", "\n[Terminated]");
+            socket.emit("done", 1);
+        }
+    });
+
+    socket.on("disconnect", () => {
+        clearTimeout(killTimer);
+        if (proc) { proc.kill(); proc = null; }
     });
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+server.listen(3000, () => console.log("Server running on port 3000"));

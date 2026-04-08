@@ -248,29 +248,9 @@
         /* IDE Body */
         .ide-body {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             min-height: 360px;
         }
-
-        /* Stdin area */
-        .stdin-area {
-            flex: 1;
-            background: var(--bg-editor);
-        }
-        #stdinInput {
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--orange);
-            font-family: var(--font-mono);
-            font-size: 13px;
-            line-height: 1.7;
-            padding: 14px 16px;
-            resize: none;
-        }
-        #stdinInput::placeholder { color: var(--text-muted); }
 
         .ide-panel {
             display: flex;
@@ -340,6 +320,9 @@
         .output-area {
             flex: 1;
             background: var(--bg-editor);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
         }
         #output {
             font-family: var(--font-mono);
@@ -349,11 +332,41 @@
             color: var(--green);
             white-space: pre-wrap;
             word-break: break-all;
-            min-height: 100%;
+            flex: 1;
             margin: 0;
         }
         #output.error { color: var(--red); }
         #output.waiting { color: var(--text-muted); font-style: italic; }
+
+        /* Terminal inline input */
+        .terminal-input-row {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 16px 10px;
+            background: var(--bg-editor);
+        }
+        .terminal-input-row.active { display: flex; }
+        .terminal-prompt {
+            color: var(--orange);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+            user-select: none;
+        }
+        #terminalInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border);
+            outline: none;
+            color: var(--orange);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 4px 0;
+            caret-color: var(--orange);
+        }
+        #terminalInput::placeholder { color: var(--text-muted); }
 
         /* Compile bar */
         .compile-bar {
@@ -617,7 +630,7 @@
         @media (max-width: 768px) {
             .ide-body { grid-template-columns: 1fr; }
             .ide-panel + .ide-panel { border-left: none; border-top: 1px solid var(--border); }
-            .ide-panel.stdin-panel { max-height: 120px; }
+
             .hero { padding: 40px 0 20px; }
             .nav-links { display: none; }
             .tech-grid { grid-template-columns: 1fr; }
@@ -698,31 +711,21 @@ dekhao a + b</textarea>
                     </div>
                 </div>
 
-                <!-- Stdin Panel -->
-                <div class="ide-panel stdin-panel">
-                    <div class="panel-header">
-                        <div class="panel-label">
-                            <span class="panel-dot" style="background:var(--orange)"></span>
-                            Input
-                        </div>
-                        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">stdin</span>
-                    </div>
-                    <div class="stdin-area">
-                        <textarea id="stdinInput" placeholder="Enter input values here (one per line)..." spellcheck="false"></textarea>
-                    </div>
-                </div>
-
                 <!-- Output Panel -->
                 <div class="ide-panel">
                     <div class="panel-header">
                         <div class="panel-label">
                             <span class="panel-dot output"></span>
-                            Output
+                            Terminal
                         </div>
                         <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">stdout</span>
                     </div>
-                    <div class="output-area">
+                    <div class="output-area" id="terminalArea">
                         <pre id="output" class="waiting">Click "Run Code" to execute...</pre>
+                        <div class="terminal-input-row" id="terminalInputRow">
+                            <span class="terminal-prompt">›</span>
+                            <input type="text" id="terminalInput" placeholder="Type input and press Enter..." autocomplete="off" spellcheck="false">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -854,11 +857,24 @@ dekhao a + b</textarea>
     </div>
 </footer>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
-    // === Line Numbers ===
+    const socket = io();
+
+    // === Elements ===
     const codeEl = document.getElementById('code');
     const lineNumsEl = document.getElementById('lineNumbers');
+    const outputEl = document.getElementById('output');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const compileBtn = document.getElementById('compileBtn');
+    const terminalInputRow = document.getElementById('terminalInputRow');
+    const terminalInput = document.getElementById('terminalInput');
+    const terminalArea = document.getElementById('terminalArea');
 
+    let isRunning = false;
+
+    // === Line Numbers ===
     function updateLineNumbers() {
         const lines = codeEl.value.split('\n').length;
         lineNumsEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
@@ -892,65 +908,101 @@ dekhao a + b</textarea>
             tab.classList.add('active');
             codeEl.value = examples[tab.dataset.example];
             updateLineNumbers();
-            const output = document.getElementById('output');
-            output.textContent = 'Click "Run Code" to execute...';
-            output.className = 'waiting';
+            resetOutput();
         });
     });
 
-    // === Compile ===
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-    const compileBtn = document.getElementById('compileBtn');
-
+    // === Helpers ===
     function setStatus(state, text) {
         statusDot.className = 'status-dot ' + state;
         statusText.textContent = text;
     }
 
-    async function compile() {
-        const output = document.getElementById('output');
-        const code = codeEl.value;
+    function resetOutput() {
+        outputEl.textContent = 'Click "Run Code" to execute...';
+        outputEl.className = 'waiting';
+        terminalInputRow.classList.remove('active');
+    }
 
+    function scrollTerminal() {
+        terminalArea.scrollTop = terminalArea.scrollHeight;
+    }
+
+    // === Run Code ===
+    function compile() {
+        const code = codeEl.value;
         if (!code.trim()) {
-            output.textContent = 'No code to run.';
-            output.className = 'error';
+            outputEl.textContent = 'No code to run.';
+            outputEl.className = 'error';
             return;
         }
 
-        compileBtn.disabled = true;
-        compileBtn.innerHTML = '<span class="spinner"></span> Running...';
-        output.textContent = 'Compiling...';
-        output.className = 'waiting';
-        setStatus('running', 'Running...');
-
-        try {
-            const res = await fetch('/compile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, userInput: document.getElementById('stdinInput').value })
-            });
-
-            const data = await res.text();
-
-            if (res.ok) {
-                output.textContent = data || '(No output)';
-                output.className = '';
-                setStatus('ready', 'Success');
-            } else {
-                output.textContent = data;
-                output.className = 'error';
-                setStatus('error', 'Error');
-            }
-        } catch (err) {
-            output.textContent = 'Network error: ' + err.message;
-            output.className = 'error';
-            setStatus('error', 'Error');
-        } finally {
-            compileBtn.disabled = false;
-            compileBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5,3 19,12 5,21"></polygon></svg> Run Code';
+        if (isRunning) {
+            socket.emit('kill');
+            return;
         }
+
+        isRunning = true;
+        compileBtn.innerHTML = '<span class="spinner"></span> Compiling...';
+        compileBtn.disabled = true;
+        outputEl.textContent = 'Transpiling and compiling...\n';
+        outputEl.className = 'waiting';
+        setStatus('running', 'Compiling...');
+        terminalInputRow.classList.remove('active');
+
+        socket.emit('run', { code });
     }
+
+    compileBtn.addEventListener('click', compile);
+
+    // === Socket Events ===
+    socket.on('started', () => {
+        outputEl.textContent = '';
+        outputEl.className = '';
+        setStatus('running', 'Running...');
+        compileBtn.disabled = false;
+        compileBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="6" y="6" width="12" height="12" rx="1"></rect></svg> Stop';
+
+        // Show input line — program may need input
+        terminalInputRow.classList.add('active');
+        terminalInput.value = '';
+        terminalInput.focus();
+        scrollTerminal();
+    });
+
+    socket.on('output', (text) => {
+        outputEl.textContent += text;
+        scrollTerminal();
+    });
+
+    socket.on('done', (exitCode) => {
+        isRunning = false;
+        terminalInputRow.classList.remove('active');
+        compileBtn.disabled = false;
+        compileBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5,3 19,12 5,21"></polygon></svg> Run Code';
+
+        if (exitCode === 0) {
+            setStatus('ready', 'Success');
+            if (!outputEl.textContent.trim()) {
+                outputEl.textContent = '(No output)';
+            }
+        } else {
+            setStatus('error', 'Exit code: ' + exitCode);
+            outputEl.className = 'error';
+        }
+    });
+
+    // === Terminal Input ===
+    terminalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && isRunning) {
+            const val = terminalInput.value;
+            // Echo the input in the terminal
+            outputEl.textContent += val + '\n';
+            socket.emit('input', val);
+            terminalInput.value = '';
+            scrollTerminal();
+        }
+    });
 
     // === Keyboard shortcut ===
     document.addEventListener('keydown', (e) => {

@@ -26,7 +26,7 @@ int yylex();
 %left '+' '-'
 %left '*' '/'
 
-%type <str> expr
+%type <str> expr condition
 
 %%
 
@@ -37,6 +37,7 @@ program:
 
 statement:
     simple_stmt NEWLINE
+    | jodi_stmt
     ;
 
 simple_stmt:
@@ -47,6 +48,28 @@ simple_stmt:
     | NAO ID { fprintf(fp, "scanf(\"%%d\", &%s);\n", $2); }
     | DHORO ID LBRACKET NUMBER RBRACKET { fprintf(fp, "int %s[%s];\n", $2, $4); }
     | ID LBRACKET NUMBER RBRACKET '=' expr { fprintf(fp, "%s[%s] = %s;\n", $1, $3, $6); }
+    ;
+
+jodi_stmt:
+    JODI condition COLON { fprintf(fp, "if (%s) {\n", $2); } NEWLINE simple_stmt NEWLINE nahole_part { fprintf(fp, "}\n"); }
+    ;
+
+nahole_part:
+    /* empty */
+    | NAHOLE COLON { fprintf(fp, "} else {\n"); } NEWLINE simple_stmt NEWLINE
+    ;
+
+condition:
+    expr GT expr {
+        char *res = malloc(200);
+        sprintf(res, "%s > %s", $1, $3);
+        $$ = res;
+    }
+    | expr LT expr {
+        char *res = malloc(200);
+        sprintf(res, "%s < %s", $1, $3);
+        $$ = res;
+    }
     ;
 
 expr:
@@ -66,7 +89,7 @@ void yyerror(const char *s) {
 
 int main() {
     fp = fopen("output.c", "w");
-    fprintf(fp, "#include <stdio.h>\nint main() {\n");
+    fprintf(fp, "#include <stdio.h>\nint main() {\nsetvbuf(stdout, NULL, _IONBF, 0);\n");
     yyparse();
     fprintf(fp, "return 0;\n}");
     fclose(fp);
