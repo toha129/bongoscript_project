@@ -1,3 +1,3 @@
-dhoro a
-nao a
-dekhao a
+dhoro arr[5]
+dhoro i = 42
+dekhao i

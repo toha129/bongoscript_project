@@ -1,8 +1,8 @@
 #include <stdio.h>
 int main() {
 setvbuf(stdout, NULL, _IONBF, 0);
-int a;
-scanf("%d", &a);
-printf("%d\n", a);
+int arr[5];
+int i = 42;
+printf("%d\n", i);
 return 0;
 }
