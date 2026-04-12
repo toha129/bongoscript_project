@@ -1,0 +1,6 @@
+dhoro a = 10
+dhoro b = 20
+dekhao a + b
+dekhao a - b
+dekhao a * b
+dekhao a / b

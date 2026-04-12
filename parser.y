@@ -6,7 +6,7 @@
 FILE *fp;
 
 char* make_expr(char* a, char* op, char* b) {
-    char *res = malloc(100);
+    char *res = malloc(256);
     sprintf(res, "%s %s %s", a, op, b);
     return res;
 }
@@ -17,68 +17,114 @@ int yylex();
 
 %union { char* str; }
 
-%token <str> NUMBER ID
+%token <str> NUMBER ID STRING
 %token DHORO JODI NAHOLE LOOP DEKHAO NAO
-%token NEWLINE COLON
+%token INDENT DEDENT NEWLINE COLON
 %token LBRACKET RBRACKET
-%token GT LT
+%token GT LT EQ
 
+%left GT LT EQ
 %left '+' '-'
 %left '*' '/'
 
-%type <str> expr condition
+%type <str> expr
 
 %%
 
+/* ── Top-level program ── */
 program:
     program statement
+    | program NEWLINE
     |
     ;
 
+/* ── Statements ── */
 statement:
     simple_stmt NEWLINE
-    | jodi_stmt
+    | if_stmt
+    | loop_stmt
     ;
 
-simple_stmt:
-    DHORO ID '=' expr { fprintf(fp, "int %s = %s;\n", $2, $4); }
-    | DHORO ID { fprintf(fp, "int %s;\n", $2); }
-    | ID '=' expr { fprintf(fp, "%s = %s;\n", $1, $3); }
-    | DEKHAO expr { fprintf(fp, "printf(\"%%d\\n\", %s);\n", $2); }
-    | NAO ID { fprintf(fp, "scanf(\"%%d\", &%s);\n", $2); }
-    | DHORO ID LBRACKET NUMBER RBRACKET { fprintf(fp, "int %s[%s];\n", $2, $4); }
-    | ID LBRACKET NUMBER RBRACKET '=' expr { fprintf(fp, "%s[%s] = %s;\n", $1, $3, $6); }
+/* ── Indented block (Python-style) ── */
+block:
+    INDENT stmts DEDENT
     ;
 
-jodi_stmt:
-    JODI condition COLON { fprintf(fp, "if (%s) {\n", $2); } NEWLINE simple_stmt NEWLINE nahole_part { fprintf(fp, "}\n"); }
+stmts:
+    stmts statement
+    | stmts NEWLINE
+    | statement
+    | NEWLINE
+    ;
+
+/* ── if / else ── */
+if_stmt:
+    JODI expr COLON NEWLINE
+    { fprintf(fp, "if (%s) {\n", $2); }
+    block nahole_part
+    { fprintf(fp, "}\n"); }
     ;
 
 nahole_part:
     /* empty */
-    | NAHOLE COLON { fprintf(fp, "} else {\n"); } NEWLINE simple_stmt NEWLINE
+    | NAHOLE COLON NEWLINE
+      { fprintf(fp, "} else {\n"); }
+      block
     ;
 
-condition:
-    expr GT expr {
-        char *res = malloc(200);
-        sprintf(res, "%s > %s", $1, $3);
-        $$ = res;
-    }
-    | expr LT expr {
-        char *res = malloc(200);
-        sprintf(res, "%s < %s", $1, $3);
-        $$ = res;
-    }
+/* ── while loop ── */
+loop_stmt:
+    LOOP expr COLON NEWLINE
+    { fprintf(fp, "while (%s) {\n", $2); }
+    block
+    { fprintf(fp, "}\n"); }
     ;
 
+/* ── Simple (single-line) statements ── */
+simple_stmt:
+    DHORO ID '=' expr
+    { fprintf(fp, "int %s = %s;\n", $2, $4); }
+
+    | DHORO ID
+    { fprintf(fp, "int %s;\n", $2); }
+
+    | ID '=' expr
+    { fprintf(fp, "%s = %s;\n", $1, $3); }
+
+    | DEKHAO expr
+    { fprintf(fp, "printf(\"%%d\\n\", %s);\n", $2); }
+
+    | DEKHAO STRING
+    { fprintf(fp, "printf(\"%%s\\n\", %s);\n", $2); }
+
+    | NAO ID
+    { fprintf(fp, "scanf(\"%%d\", &%s);\n", $2); }
+
+    | DHORO ID LBRACKET expr RBRACKET
+    { fprintf(fp, "int %s[%s];\n", $2, $4); }
+
+    | ID LBRACKET expr RBRACKET '=' expr
+    { fprintf(fp, "%s[%s] = %s;\n", $1, $3, $6); }
+    ;
+
+/* ── Expressions (includes arithmetic + comparisons) ── */
 expr:
-    NUMBER { $$ = $1; }
-    | ID { $$ = $1; }
+    NUMBER          { $$ = $1; }
+    | ID            { $$ = $1; }
+    | ID LBRACKET expr RBRACKET
+    {
+        char *res = malloc(256);
+        sprintf(res, "%s[%s]", $1, $3);
+        $$ = res;
+    }
     | expr '+' expr { $$ = make_expr($1, "+", $3); }
     | expr '-' expr { $$ = make_expr($1, "-", $3); }
     | expr '*' expr { $$ = make_expr($1, "*", $3); }
     | expr '/' expr { $$ = make_expr($1, "/", $3); }
+    | expr GT expr  { $$ = make_expr($1, ">", $3); }
+    | expr LT expr  { $$ = make_expr($1, "<", $3); }
+    | expr EQ expr  { $$ = make_expr($1, "==", $3); }
+    | '(' expr ')'  { $$ = $2; }
     ;
 
 %%

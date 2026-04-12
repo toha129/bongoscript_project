@@ -1,0 +1,5 @@
+dhoro x = 3
+jodi x > 5:
+    dekhao 100
+nahole:
+    dekhao 200

@@ -1,0 +1,17 @@
+dhoro x = 10
+dhoro y = 5
+jodi x > y:
+    dekhao x
+    jodi x > 8:
+        dekhao y
+    nahole:
+        dekhao x
+nahole:
+    dekhao y
+dhoro i = 0
+loop i < 3:
+    dekhao i
+    i = i + 1
+dhoro arr[5]
+arr[0] = 42
+dekhao arr[0]

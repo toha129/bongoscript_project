@@ -251,6 +251,9 @@
             grid-template-columns: 1fr 1fr;
             min-height: 360px;
         }
+        .ide-body.show-ccode {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
 
         .ide-panel {
             display: flex;
@@ -424,6 +427,51 @@
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
+        }
+
+        /* ===== Generated C Code Panel ===== */
+        .ccode-panel {
+            display: none;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        .ide-body.show-ccode .ccode-panel {
+            display: flex;
+        }
+        .ccode-content {
+            flex: 1;
+            background: var(--bg-editor);
+            overflow-y: auto;
+        }
+        #ccodeOutput {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.7;
+            padding: 14px 16px;
+            color: var(--cyan);
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+        .panel-dot.ccode { background: var(--cyan); }
+
+        .ccode-toggle {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .ccode-toggle:hover { color: var(--cyan); border-color: var(--cyan); }
+        .ccode-toggle.active {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: rgba(61, 200, 214, 0.08);
         }
 
         /* ===== About Section ===== */
@@ -628,8 +676,9 @@
 
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
-            .ide-body { grid-template-columns: 1fr; }
+            .ide-body { grid-template-columns: 1fr !important; }
             .ide-panel + .ide-panel { border-left: none; border-top: 1px solid var(--border); }
+            .ccode-panel { border-left: none; border-top: 1px solid var(--border); }
 
             .hero { padding: 40px 0 20px; }
             .nav-links { display: none; }
@@ -685,7 +734,9 @@
                 </div>
                 <div class="ide-tabs">
                     <button class="ide-tab active" data-example="hello">Hello World</button>
-                    <button class="ide-tab" data-example="math">Math</button>
+                    <button class="ide-tab" data-example="string">String</button>
+                    <button class="ide-tab" data-example="ifelse">If-Else</button>
+                    <button class="ide-tab" data-example="loop">Loop</button>
                     <button class="ide-tab" data-example="array">Array</button>
                 </div>
             </div>
@@ -728,6 +779,20 @@ dekhao a + b</textarea>
                         </div>
                     </div>
                 </div>
+
+                <!-- Generated C Panel -->
+                <div class="ide-panel ccode-panel" id="ccodePanel">
+                    <div class="panel-header">
+                        <div class="panel-label">
+                            <span class="panel-dot ccode"></span>
+                            Generated C
+                        </div>
+                        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">output.c</span>
+                    </div>
+                    <div class="ccode-content">
+                        <pre id="ccodeOutput">Run code to see generated C...</pre>
+                    </div>
+                </div>
             </div>
 
             <!-- Compile bar -->
@@ -736,10 +801,13 @@ dekhao a + b</textarea>
                     <span class="status-dot ready" id="statusDot"></span>
                     <span id="statusText">Ready</span>
                 </div>
-                <button class="compile-btn" id="compileBtn" onclick="compile()">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"></polygon></svg>
-                    Run Code
-                </button>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="ccode-toggle" id="ccodeToggle" title="Show / Hide generated C code">{ C }</button>
+                    <button class="compile-btn" id="compileBtn" onclick="compile()">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"></polygon></svg>
+                        Run Code
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -821,8 +889,13 @@ dekhao a + b</textarea>
                     </tr>
                     <tr>
                         <td class="kw">dekhao</td>
-                        <td class="desc">Print a value to stdout</td>
+                        <td class="desc">Print a value or string to stdout</td>
                         <td class="ex">dekhao x + y</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">dekhao "..."</td>
+                        <td class="desc">Print a string literal</td>
+                        <td class="ex">dekhao "hello world"</td>
                     </tr>
                     <tr>
                         <td class="kw">nao</td>
@@ -830,8 +903,18 @@ dekhao a + b</textarea>
                         <td class="ex">nao x</td>
                     </tr>
                     <tr>
-                        <td class="kw">+ - * /</td>
-                        <td class="desc">Arithmetic operators</td>
+                        <td class="kw">jodi / nahole</td>
+                        <td class="desc">If / Else conditional block</td>
+                        <td class="ex">jodi x > 5:</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">loop</td>
+                        <td class="desc">While loop block</td>
+                        <td class="ex">loop i < 10:</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">+ - * / == > <</td>
+                        <td class="desc">Operators (arithmetic & comparison)</td>
                         <td class="ex">dekhao a * b + c</td>
                     </tr>
                     <tr>
@@ -874,6 +957,17 @@ dekhao a + b</textarea>
 
     let isRunning = false;
 
+    // === C Code Panel ===
+    const ccodeToggle = document.getElementById('ccodeToggle');
+    const ccodePanel  = document.getElementById('ccodePanel');
+    const ccodeOutput = document.getElementById('ccodeOutput');
+    const ideBody     = document.querySelector('.ide-body');
+
+    ccodeToggle.addEventListener('click', () => {
+        const showing = ideBody.classList.toggle('show-ccode');
+        ccodeToggle.classList.toggle('active', showing);
+    });
+
     // === Line Numbers ===
     function updateLineNumbers() {
         const lines = codeEl.value.split('\n').length;
@@ -898,8 +992,10 @@ dekhao a + b</textarea>
     // === Example Tabs ===
     const examples = {
         hello: 'dhoro a = 5\ndhoro b = 10\ndekhao a + b',
-        math: 'dhoro x = 100\ndhoro y = 25\ndekhao x - y\ndekhao x * y',
-        array: 'dhoro arr[5]\ndhoro i = 42\ndekhao i'
+        string: 'dekhao "Salam! BongoScript e swagotom!"\ndhoro x = 42\ndekhao x\ndekhao "Program shesh."',
+        ifelse: 'dhoro x = 7\njodi x > 5:\n    dekhao "boro"\n    jodi x > 10:\n        dekhao "onek boro"\n    nahole:\n        dekhao "moddho"\nnahole:\n    dekhao "choto"',
+        loop: 'dhoro i = 1\nloop i < 6:\n    dekhao i\n    i = i + 1\ndekhao "Loop shesh!"',
+        array: 'dhoro arr[3]\narr[0] = 10\narr[1] = 20\narr[2] = arr[0] + arr[1]\ndekhao arr[2]'
     };
 
     document.querySelectorAll('.ide-tab').forEach(tab => {
@@ -922,6 +1018,7 @@ dekhao a + b</textarea>
         outputEl.textContent = 'Click "Run Code" to execute...';
         outputEl.className = 'waiting';
         terminalInputRow.classList.remove('active');
+        ccodeOutput.textContent = 'Run code to see generated C...';
     }
 
     function scrollTerminal() {
@@ -989,6 +1086,16 @@ dekhao a + b</textarea>
         } else {
             setStatus('error', 'Exit code: ' + exitCode);
             outputEl.className = 'error';
+        }
+    });
+
+    // === Generated C Code ===
+    socket.on('ccode', (code) => {
+        ccodeOutput.textContent = code;
+        // Auto-open C panel if hidden
+        if (!ideBody.classList.contains('show-ccode')) {
+            ideBody.classList.add('show-ccode');
+            ccodeToggle.classList.add('active');
         }
     });
 

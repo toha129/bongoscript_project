@@ -12,7 +12,7 @@ const io = new Server(server);
 app.use(express.static(__dirname));
 
 const BASH = "C:\\msys64\\usr\\bin\\bash.exe";
-const PROJECT = "/d/Games/Compressed/bongoscript_project";
+const PROJECT = "/f/bongoscript_project";
 
 io.on("connection", (socket) => {
     let proc = null;
@@ -46,6 +46,8 @@ io.on("connection", (socket) => {
                     socket.emit("done", 1);
                     return;
                 }
+                // Send generated C code to UI
+                socket.emit("ccode", outputC);
             } catch (e) {
                 socket.emit("output", "Translation Error: output.c not found.");
                 socket.emit("done", 1);
