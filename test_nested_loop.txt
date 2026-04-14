@@ -1,7 +1,0 @@
-dhoro i = 0
-loop i < 3:
-    dhoro j = 0
-    loop j < 2:
-        dekhao i + j
-        j = j + 1
-    i = i + 1

@@ -1,4 +1,0 @@
-dekhao "Hello BongoScript!"
-dhoro x = 42
-dekhao x
-dekhao "Program shesh."

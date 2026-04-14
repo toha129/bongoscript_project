@@ -1,4 +1,0 @@
-dhoro x
-nao x
-dekhao x
-dekhao "Program shesh."

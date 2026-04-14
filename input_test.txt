@@ -1,2 +1,0 @@
-dhoro a = 5
-dekhao a
