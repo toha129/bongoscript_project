@@ -36,7 +36,7 @@ RUN chmod +x ./banglish
 
 # Copy application files
 COPY server.js ./
-COPY index.html about.html team.html favicon.svg ./
+COPY index.html about.html team.html favicon.png ./
 
 # Railway provides PORT env variable
 ENV PORT=3000
