@@ -1,0 +1,10 @@
+node_modules/
+output.c
+input.txt
+user_input.txt
+input_test.txt
+gcc_err.txt
+build_log.txt
+runme.exe
+runme
+*.o

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — BongoScript</title>
+    <meta name="description" content="Learn how BongoScript works: a Bangla programming language transpiled to C using Flex, Bison, and GCC.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Reset & Variables ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #111118;
+            --bg-elevated: #19191f;
+            --bg-surface: #1e1e26;
+            --bg-editor: #141419;
+            --border: #2a2a35;
+            --border-subtle: #222230;
+            --accent: #6d5cff;
+            --accent-light: #8b7dff;
+            --accent-dim: rgba(109, 92, 255, 0.12);
+            --green: #3dd68c;
+            --green-dim: rgba(61, 214, 140, 0.12);
+            --orange: #e8963e;
+            --red: #e85454;
+            --cyan: #3dc8d6;
+            --text: #d8d6e0;
+            --text-secondary: #8a889a;
+            --text-muted: #55536a;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== Background Effects ===== */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(109, 92, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(109, 92, 255, 0.035) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none; z-index: 0;
+        }
+        .bg-orb {
+            position: fixed; border-radius: 50%; filter: blur(100px);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-orb-1 {
+            width: 450px; height: 450px; top: -80px; right: -80px;
+            background: radial-gradient(circle, rgba(109, 92, 255, 0.1), transparent 70%);
+            animation: drift 22s ease-in-out infinite;
+        }
+        .bg-orb-2 {
+            width: 350px; height: 350px; bottom: 10%; left: -60px;
+            background: radial-gradient(circle, rgba(109, 92, 255, 0.06), transparent 70%);
+            animation: drift 28s ease-in-out infinite reverse;
+        }
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        /* ===== Layout ===== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative; z-index: 1;
+        }
+
+        /* ===== Navbar ===== */
+        .navbar {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+            background: rgba(17, 17, 24, 0.95);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .logo-mark {
+            width: 32px; height: 32px;
+            border-radius: 6px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            font-family: var(--font-mono);
+        }
+        .logo-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .logo-name span { color: var(--accent-light); }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s, background 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-links a.active {
+            color: var(--accent-light);
+            background: var(--accent-dim);
+        }
+
+        /* ===== Page Header ===== */
+        .page-header {
+            padding: 64px 0 40px;
+            text-align: center;
+        }
+        .page-header-label {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            background: var(--accent-dim);
+            color: var(--accent-light);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .page-header h1 {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -1px;
+            margin-bottom: 14px;
+            color: #fff;
+        }
+        .page-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* ===== Sections ===== */
+        .section {
+            padding: 56px 0;
+            border-top: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        .section > .container > p.section-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            max-width: 640px;
+            line-height: 1.8;
+            margin-bottom: 36px;
+        }
+
+        /* ===== Pipeline ===== */
+        .pipeline {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 40px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        .pipeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            text-align: center;
+        }
+        .pipeline-icon {
+            width: 48px; height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            transition: transform 0.2s;
+        }
+        .pipeline-step:hover .pipeline-icon {
+            transform: translateY(-3px);
+        }
+        .pipeline-icon.step1 { background: var(--accent-dim); color: var(--accent-light); }
+        .pipeline-icon.step2 { background: rgba(232, 150, 62, 0.12); color: var(--orange); }
+        .pipeline-icon.step3 { background: rgba(61, 200, 214, 0.12); color: var(--cyan); }
+        .pipeline-icon.step4 { background: var(--green-dim); color: var(--green); }
+
+        .pipeline-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .pipeline-sublabel {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .pipeline-arrow {
+            color: var(--text-muted);
+            font-size: 20px;
+            margin: 0 12px;
+            flex-shrink: 0;
+            padding-bottom: 28px;
+            opacity: 0.6;
+        }
+
+        /* ===== Tech Grid ===== */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .tech-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: border-color 0.25s, transform 0.2s;
+        }
+        .tech-card:hover {
+            border-color: var(--border-subtle);
+            transform: translateY(-2px);
+        }
+        .tech-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tech-card h3 .dot {
+            width: 8px; height: 8px;
+            border-radius: 2px;
+        }
+        .tech-card h3 .dot.purple { background: var(--accent); }
+        .tech-card h3 .dot.orange { background: var(--orange); }
+        .tech-card h3 .dot.cyan { background: var(--cyan); }
+        .tech-card h3 .dot.green { background: var(--green); }
+
+        .tech-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        .tech-card code {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent-light);
+            background: var(--accent-dim);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* ===== Reference Table ===== */
+        .ref-table-wrap {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .ref-table thead {
+            background: var(--bg-surface);
+        }
+        .ref-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+        .ref-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .ref-table tr:last-child td { border-bottom: none; }
+        .ref-table tbody tr {
+            transition: background 0.15s;
+        }
+        .ref-table tbody tr:hover {
+            background: rgba(109, 92, 255, 0.03);
+        }
+        .ref-table .kw {
+            font-family: var(--font-mono);
+            color: var(--accent-light);
+            font-weight: 500;
+        }
+        .ref-table .desc { color: var(--text-secondary); }
+        .ref-table .ex {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* ===== CTA Banner ===== */
+        .cta-banner {
+            padding: 56px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .cta-banner h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .cta-banner p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .cta-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+        .cta-btn svg { width: 16px; height: 16px; }
+
+        /* ===== Footer ===== */
+        .footer {
+            padding: 24px 0;
+            border-top: 1px solid var(--border);
+        }
+        .footer .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .footer-links {
+            display: flex;
+            gap: 16px;
+        }
+        .footer-links a {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--text-secondary); }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .page-header { padding: 40px 0 24px; }
+            .nav-links { display: none; }
+            .tech-grid { grid-template-columns: 1fr; }
+            .pipeline { justify-content: flex-start; }
+            .footer .container { flex-direction: column; gap: 8px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background texture -->
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-mark">B</div>
+            <div class="logo-name">Bongo<span>Script</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Editor</a></li>
+            <li><a href="/about.html" class="active">About</a></li>
+            <li><a href="#reference">Reference</a></li>
+            <li><a href="/team.html">Team</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <div class="page-header-label">Documentation</div>
+        <h1>How BongoScript Works</h1>
+        <p>BongoScript programs go through a multi-stage compilation pipeline. The source is tokenized, parsed, transpiled into C, compiled with GCC, and executed — all in the browser.</p>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="section" id="about">
+    <div class="container">
+        <h2>Compilation Pipeline</h2>
+        <p class="section-desc">Your BongoScript source code is first tokenized by a Flex-generated lexer, then parsed by a Bison-generated parser that emits equivalent C code. The generated C file is compiled with GCC and executed on the server.</p>
+
+        <!-- Pipeline diagram -->
+        <div class="pipeline">
+            <div class="pipeline-step">
+                <div class="pipeline-icon step1">.bs</div>
+                <div class="pipeline-label">Source Code</div>
+                <div class="pipeline-sublabel">BongoScript</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon step2">Lex</div>
+                <div class="pipeline-label">Lexer</div>
+                <div class="pipeline-sublabel">Flex</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon step3">Parse</div>
+                <div class="pipeline-label">Parser</div>
+                <div class="pipeline-sublabel">Bison</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-step">
+                <div class="pipeline-icon step4">.c</div>
+                <div class="pipeline-label">Compile & Run</div>
+                <div class="pipeline-sublabel">GCC</div>
+            </div>
+        </div>
+
+        <!-- Tech breakdown -->
+        <div class="tech-grid">
+            <div class="tech-card">
+                <h3><span class="dot purple"></span>Lexer — Flex</h3>
+                <p>Tokenizes BongoScript source into keywords like <code>dhoro</code>, <code>dekhao</code>, <code>nao</code>, identifiers, numbers, and operators.</p>
+            </div>
+            <div class="tech-card">
+                <h3><span class="dot orange"></span>Parser — Bison</h3>
+                <p>Defines the grammar rules for BongoScript and generates equivalent C code through semantic actions in the parse tree.</p>
+            </div>
+            <div class="tech-card">
+                <h3><span class="dot cyan"></span>Backend — Node.js</h3>
+                <p>An Express server receives code from the browser, runs the transpiler and GCC, and returns the program output back to the client.</p>
+            </div>
+            <div class="tech-card">
+                <h3><span class="dot green"></span>Execution — GCC</h3>
+                <p>The transpiled C file (<code>output.c</code>) is compiled into a native binary and executed. Standard output is captured and returned.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Reference Section -->
+<section class="section" id="reference">
+    <div class="container">
+        <h2>Language Reference</h2>
+        <p class="section-desc">A quick reference for all BongoScript keywords and operators. All keywords are Bangla transliterations of common programming constructs.</p>
+        <div class="ref-table-wrap">
+            <table class="ref-table">
+                <thead>
+                    <tr>
+                        <th>Keyword</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="kw">dhoro</td>
+                        <td class="desc">Declare an integer variable</td>
+                        <td class="ex">dhoro x = 10</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">dekhao</td>
+                        <td class="desc">Print a value or string to stdout</td>
+                        <td class="ex">dekhao x + y</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">dekhao "..."</td>
+                        <td class="desc">Print a string literal</td>
+                        <td class="ex">dekhao "hello world"</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">nao</td>
+                        <td class="desc">Read input from the user</td>
+                        <td class="ex">nao x</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">jodi / nahole</td>
+                        <td class="desc">If / Else conditional block</td>
+                        <td class="ex">jodi x > 5:</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">loop</td>
+                        <td class="desc">While loop block</td>
+                        <td class="ex">loop i < 10:</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">+ - * / == > <</td>
+                        <td class="desc">Operators (arithmetic & comparison)</td>
+                        <td class="ex">dekhao a * b + c</td>
+                    </tr>
+                    <tr>
+                        <td class="kw">dhoro x[5]</td>
+                        <td class="desc">Declare an integer array</td>
+                        <td class="ex">dhoro arr[10]</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="cta-banner">
+    <div class="container">
+        <h2>Ready to try BongoScript?</h2>
+        <p>Open the live editor and start writing Bangla code that compiles to C.</p>
+        <a href="/" class="cta-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"></polygon></svg>
+            Open Editor
+        </a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>BongoScript &copy; 2026</p>
+        <div class="footer-links">
+            <a href="/">Editor</a>
+            <a href="/about.html">About</a>
+            <a href="#reference">Reference</a>
+            <a href="/team.html">Team</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

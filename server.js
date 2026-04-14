@@ -4,6 +4,7 @@ const { Server } = require("socket.io");
 const fs = require("fs");
 const { exec, spawn } = require("child_process");
 const path = require("path");
+const os = require("os");
 
 const app = express();
 const server = http.createServer(app);
@@ -11,8 +12,15 @@ const io = new Server(server);
 
 app.use(express.static(__dirname));
 
-const BASH = "C:\\msys64\\usr\\bin\\bash.exe";
-const PROJECT = "/f/bongoscript_project";
+// ===== Platform detection =====
+const isWindows = os.platform() === "win32";
+
+// Windows (local dev): use MSYS2 bash + .exe extensions
+// Linux (Railway/production): use native gcc + no extensions
+const BASH = isWindows ? "C:\\msys64\\usr\\bin\\bash.exe" : "/bin/bash";
+const PROJECT = isWindows ? "/f/bongoscript_project" : __dirname;
+const TRANSPILER = isWindows ? 'cmd /c "banglish.exe < input.txt"' : './banglish < input.txt';
+const COMPILED_NAME = isWindows ? "runme.exe" : "runme";
 
 io.on("connection", (socket) => {
     let proc = null;
@@ -24,11 +32,10 @@ io.on("connection", (socket) => {
         clearTimeout(killTimer);
 
         const code = (data.code || "").replace(/\r\n/g, "\n");
-        fs.writeFileSync("input.txt", code + "\n");
+        fs.writeFileSync(path.join(__dirname, "input.txt"), code + "\n");
 
         // Step 1: Transpile BongoScript -> C
-        const translateCmd = 'cmd /c "banglish.exe < input.txt"';
-        exec(translateCmd, { cwd: __dirname }, (err1, stdout1, stderr1) => {
+        exec(TRANSPILER, { cwd: __dirname }, (err1, stdout1, stderr1) => {
             const translationOutput = (stdout1 || "") + (stderr1 || "");
 
             // Check if output.c was actually generated/updated
@@ -54,8 +61,14 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            // Step 2: Compile with GCC via MSYS2
-            const compileCmd = `"${BASH}" -lc "cd ${PROJECT} && gcc output.c -o runme.exe 2>&1"`;
+            // Step 2: Compile with GCC
+            let compileCmd;
+            if (isWindows) {
+                compileCmd = `"${BASH}" -lc "cd ${PROJECT} && gcc output.c -o ${COMPILED_NAME} 2>&1"`;
+            } else {
+                compileCmd = `gcc output.c -o ${COMPILED_NAME} 2>&1`;
+            }
+
             exec(compileCmd, { cwd: __dirname, timeout: 10000 }, (err2, stdout2) => {
                 if (err2) {
                     socket.emit("output", `Compile Error:\n${stdout2 || err2.message}`);
@@ -63,14 +76,22 @@ io.on("connection", (socket) => {
                     return;
                 }
 
-                // Step 3: Run interactively through bash so MSYS2 handles stdin properly
+                // Step 3: Run the compiled program
                 socket.emit("started");
 
-                proc = spawn(BASH, ["-c", `cd ${PROJECT} && ./runme.exe`], {
-                    cwd: __dirname,
-                    stdio: ["pipe", "pipe", "pipe"],
-                    env: { ...process.env, MSYS_NO_PATHCONV: "1" }
-                });
+                if (isWindows) {
+                    proc = spawn(BASH, ["-c", `cd ${PROJECT} && ./${COMPILED_NAME}`], {
+                        cwd: __dirname,
+                        stdio: ["pipe", "pipe", "pipe"],
+                        env: { ...process.env, MSYS_NO_PATHCONV: "1" }
+                    });
+                } else {
+                    proc = spawn(`./${COMPILED_NAME}`, {
+                        cwd: __dirname,
+                        stdio: ["pipe", "pipe", "pipe"],
+                        shell: true
+                    });
+                }
 
                 // 30s timeout
                 killTimer = setTimeout(() => {
@@ -127,4 +148,6 @@ io.on("connection", (socket) => {
     });
 });
 
-server.listen(3000, () => console.log("Server running on port 3000"));
+// Railway provides PORT env variable; fallback to 3000 for local dev
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

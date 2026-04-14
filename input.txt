@@ -1,9 +1,4 @@
-dhoro x = 7
-jodi x > 5:
-    dekhao "boro"
-    jodi x > 10:
-        dekhao "onek boro"
-    nahole:
-        dekhao "moddho"
-nahole:
-    dekhao "choto"
+dhoro x
+nao x
+dekhao x
+dekhao "Program shesh."

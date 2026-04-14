@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BongoScript — A Bangla-to-C Transpiler</title>
-    <meta name="description" content="BongoScript: A Bangla programming language that transpiles to C, built using Flex and Bison.">
+    <meta name="description" content="BongoScript: A Bangla programming language that transpiles to C, built using Flex and Bison. Try it live in the browser.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -142,6 +142,10 @@
         .nav-links a:hover {
             color: var(--text);
             background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-links a.active {
+            color: var(--accent-light);
+            background: var(--accent-dim);
         }
 
         /* ===== Hero ===== */
@@ -474,170 +478,6 @@
             background: rgba(61, 200, 214, 0.08);
         }
 
-        /* ===== About Section ===== */
-        .about-section {
-            padding: 56px 0;
-            border-top: 1px solid var(--border);
-        }
-        .about-section h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            letter-spacing: -0.3px;
-        }
-        .about-section > .container > p {
-            color: var(--text-secondary);
-            font-size: 14px;
-            max-width: 640px;
-            line-height: 1.8;
-            margin-bottom: 36px;
-        }
-
-        /* Pipeline */
-        .pipeline {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            margin-bottom: 40px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-        }
-        .pipeline-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            min-width: 120px;
-            text-align: center;
-        }
-        .pipeline-icon {
-            width: 40px; height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: var(--font-mono);
-        }
-        .pipeline-icon.step1 { background: var(--accent-dim); color: var(--accent-light); }
-        .pipeline-icon.step2 { background: rgba(232, 150, 62, 0.12); color: var(--orange); }
-        .pipeline-icon.step3 { background: rgba(61, 200, 214, 0.12); color: var(--cyan); }
-        .pipeline-icon.step4 { background: var(--green-dim); color: var(--green); }
-
-        .pipeline-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text);
-        }
-        .pipeline-sublabel {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-        }
-        .pipeline-arrow {
-            color: var(--text-muted);
-            font-size: 18px;
-            margin: 0 8px;
-            flex-shrink: 0;
-            padding-bottom: 28px;
-        }
-
-        /* Tech grid */
-        .tech-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 16px;
-        }
-        .tech-card {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-        }
-        .tech-card h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tech-card h3 .dot {
-            width: 8px; height: 8px;
-            border-radius: 2px;
-        }
-        .tech-card h3 .dot.purple { background: var(--accent); }
-        .tech-card h3 .dot.orange { background: var(--orange); }
-        .tech-card h3 .dot.cyan { background: var(--cyan); }
-        .tech-card h3 .dot.green { background: var(--green); }
-
-        .tech-card p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-        .tech-card code {
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: var(--accent-light);
-            background: var(--accent-dim);
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* ===== Reference Section ===== */
-        .ref-section {
-            padding: 56px 0;
-            border-top: 1px solid var(--border);
-        }
-        .ref-section h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            letter-spacing: -0.3px;
-        }
-        .ref-table-wrap {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
-        }
-        .ref-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .ref-table thead {
-            background: var(--bg-surface);
-        }
-        .ref-table th {
-            padding: 10px 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-        }
-        .ref-table td {
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .ref-table tr:last-child td { border-bottom: none; }
-        .ref-table .kw {
-            font-family: var(--font-mono);
-            color: var(--accent-light);
-            font-weight: 500;
-        }
-        .ref-table .desc { color: var(--text-secondary); }
-        .ref-table .ex {
-            font-family: var(--font-mono);
-            color: var(--text-secondary);
-            font-size: 12px;
-        }
-
         /* ===== Footer ===== */
         .footer {
             padding: 24px 0;
@@ -682,8 +522,6 @@
 
             .hero { padding: 40px 0 20px; }
             .nav-links { display: none; }
-            .tech-grid { grid-template-columns: 1fr; }
-            .pipeline { justify-content: flex-start; }
             .footer .container { flex-direction: column; gap: 8px; text-align: center; }
         }
     </style>
@@ -698,14 +536,15 @@
 <!-- Navbar -->
 <nav class="navbar" id="navbar">
     <div class="container">
-        <a href="#" class="logo">
+        <a href="/" class="logo">
             <div class="logo-mark">B</div>
             <div class="logo-name">Bongo<span>Script</span></div>
         </a>
         <ul class="nav-links">
-            <li><a href="#editor">Editor</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#reference">Reference</a></li>
+            <li><a href="/" class="active">Editor</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="/about.html#reference">Reference</a></li>
+            <li><a href="/team.html">Team</a></li>
         </ul>
     </div>
 </nav>
@@ -813,129 +652,14 @@ dekhao a + b</textarea>
     </div>
 </section>
 
-<!-- About Section -->
-<section class="about-section" id="about">
-    <div class="container">
-        <h2>How It Works</h2>
-        <p>BongoScript programs go through a multi-stage compilation pipeline. The source is first tokenized by a Flex-generated lexer, then parsed by a Bison-generated parser that emits equivalent C code. The generated C file is compiled with GCC and executed on the server.</p>
-
-        <!-- Pipeline diagram -->
-        <div class="pipeline">
-            <div class="pipeline-step">
-                <div class="pipeline-icon step1">.bs</div>
-                <div class="pipeline-label">Source Code</div>
-                <div class="pipeline-sublabel">BongoScript</div>
-            </div>
-            <div class="pipeline-arrow">→</div>
-            <div class="pipeline-step">
-                <div class="pipeline-icon step2">Lex</div>
-                <div class="pipeline-label">Lexer</div>
-                <div class="pipeline-sublabel">Flex</div>
-            </div>
-            <div class="pipeline-arrow">→</div>
-            <div class="pipeline-step">
-                <div class="pipeline-icon step3">Parse</div>
-                <div class="pipeline-label">Parser</div>
-                <div class="pipeline-sublabel">Bison</div>
-            </div>
-            <div class="pipeline-arrow">→</div>
-            <div class="pipeline-step">
-                <div class="pipeline-icon step4">.c</div>
-                <div class="pipeline-label">Compile & Run</div>
-                <div class="pipeline-sublabel">GCC</div>
-            </div>
-        </div>
-
-        <!-- Tech breakdown -->
-        <div class="tech-grid">
-            <div class="tech-card">
-                <h3><span class="dot purple"></span>Lexer — Flex</h3>
-                <p>Tokenizes BongoScript source into keywords like <code>dhoro</code>, <code>dekhao</code>, <code>nao</code>, identifiers, numbers, and operators.</p>
-            </div>
-            <div class="tech-card">
-                <h3><span class="dot orange"></span>Parser — Bison</h3>
-                <p>Defines the grammar rules for BongoScript and generates equivalent C code through semantic actions in the parse tree.</p>
-            </div>
-            <div class="tech-card">
-                <h3><span class="dot cyan"></span>Backend — Node.js</h3>
-                <p>An Express server receives code from the browser, runs the transpiler and GCC, and returns the program output back to the client.</p>
-            </div>
-            <div class="tech-card">
-                <h3><span class="dot green"></span>Execution — GCC</h3>
-                <p>The transpiled C file (<code>output.c</code>) is compiled into a native binary and executed. Standard output is captured and returned.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Reference Section -->
-<section class="ref-section" id="reference">
-    <div class="container">
-        <h2>Language Reference</h2>
-        <div class="ref-table-wrap">
-            <table class="ref-table">
-                <thead>
-                    <tr>
-                        <th>Keyword</th>
-                        <th>Description</th>
-                        <th>Example</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="kw">dhoro</td>
-                        <td class="desc">Declare an integer variable</td>
-                        <td class="ex">dhoro x = 10</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">dekhao</td>
-                        <td class="desc">Print a value or string to stdout</td>
-                        <td class="ex">dekhao x + y</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">dekhao "..."</td>
-                        <td class="desc">Print a string literal</td>
-                        <td class="ex">dekhao "hello world"</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">nao</td>
-                        <td class="desc">Read input from the user</td>
-                        <td class="ex">nao x</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">jodi / nahole</td>
-                        <td class="desc">If / Else conditional block</td>
-                        <td class="ex">jodi x > 5:</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">loop</td>
-                        <td class="desc">While loop block</td>
-                        <td class="ex">loop i < 10:</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">+ - * / == > <</td>
-                        <td class="desc">Operators (arithmetic & comparison)</td>
-                        <td class="ex">dekhao a * b + c</td>
-                    </tr>
-                    <tr>
-                        <td class="kw">dhoro x[5]</td>
-                        <td class="desc">Declare an integer array</td>
-                        <td class="ex">dhoro arr[10]</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
 <!-- Footer -->
 <footer class="footer">
     <div class="container">
         <p>BongoScript &copy; 2026</p>
         <div class="footer-links">
-            <a href="#">Flex</a>
-            <a href="#">Bison</a>
-            <a href="#">Node.js</a>
+            <a href="/about.html">About</a>
+            <a href="/about.html#reference">Reference</a>
+            <a href="/team.html">Team</a>
         </div>
     </div>
 </footer>

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team — BongoScript</title>
+    <meta name="description" content="Meet the creators behind BongoScript — a Bangla-to-C transpiler built as a Compiler Design project.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Reset & Variables ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #111118;
+            --bg-elevated: #19191f;
+            --bg-surface: #1e1e26;
+            --bg-editor: #141419;
+            --border: #2a2a35;
+            --border-subtle: #222230;
+            --accent: #6d5cff;
+            --accent-light: #8b7dff;
+            --accent-dim: rgba(109, 92, 255, 0.12);
+            --green: #3dd68c;
+            --green-dim: rgba(61, 214, 140, 0.12);
+            --orange: #e8963e;
+            --red: #e85454;
+            --cyan: #3dc8d6;
+            --text: #d8d6e0;
+            --text-secondary: #8a889a;
+            --text-muted: #55536a;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ===== Background Effects ===== */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(109, 92, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(109, 92, 255, 0.035) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none; z-index: 0;
+        }
+        .bg-orb {
+            position: fixed; border-radius: 50%; filter: blur(100px);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-orb-1 {
+            width: 450px; height: 450px; top: -80px; right: -80px;
+            background: radial-gradient(circle, rgba(109, 92, 255, 0.1), transparent 70%);
+            animation: drift 22s ease-in-out infinite;
+        }
+        .bg-orb-2 {
+            width: 350px; height: 350px; bottom: 10%; left: -60px;
+            background: radial-gradient(circle, rgba(109, 92, 255, 0.06), transparent 70%);
+            animation: drift 28s ease-in-out infinite reverse;
+        }
+        .bg-orb-3 {
+            width: 300px; height: 300px; top: 50%; right: 10%;
+            background: radial-gradient(circle, rgba(61, 214, 140, 0.05), transparent 70%);
+            animation: drift 25s ease-in-out infinite;
+        }
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        /* ===== Layout ===== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative; z-index: 1;
+        }
+
+        /* ===== Navbar ===== */
+        .navbar {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+            background: rgba(17, 17, 24, 0.95);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        .logo-mark {
+            width: 32px; height: 32px;
+            border-radius: 6px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            font-family: var(--font-mono);
+        }
+        .logo-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .logo-name span { color: var(--accent-light); }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            list-style: none;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: color 0.2s, background 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-links a.active {
+            color: var(--accent-light);
+            background: var(--accent-dim);
+        }
+
+        /* ===== Page Header ===== */
+        .page-header {
+            padding: 72px 0 48px;
+            text-align: center;
+        }
+        .page-header-label {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 100px;
+            background: var(--accent-dim);
+            color: var(--accent-light);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.6s ease;
+        }
+        .page-header h1 {
+            font-size: clamp(30px, 4.5vw, 44px);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -1.2px;
+            margin-bottom: 16px;
+            color: #fff;
+            animation: fadeInDown 0.6s ease 0.1s both;
+        }
+        .page-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto;
+            line-height: 1.7;
+            animation: fadeInDown 0.6s ease 0.2s both;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Team Grid ===== */
+        .team-section {
+            padding: 0 0 72px;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .team-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, transform 0.25s, box-shadow 0.3s;
+            animation: cardFadeIn 0.5s ease both;
+        }
+        .team-card:nth-child(1) { animation-delay: 0.15s; }
+        .team-card:nth-child(2) { animation-delay: 0.25s; }
+        .team-card:nth-child(3) { animation-delay: 0.35s; }
+        .team-card:nth-child(4) { animation-delay: 0.45s; }
+        .team-card:nth-child(5) { animation-delay: 0.55s; }
+
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .team-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--cyan));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .team-card:hover {
+            border-color: rgba(109, 92, 255, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(109, 92, 255, 0.08);
+        }
+        .team-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Avatar */
+        .avatar {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: white;
+            position: relative;
+        }
+        .avatar::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, var(--accent), var(--cyan)) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        .team-card:hover .avatar::after {
+            opacity: 1;
+        }
+
+        .avatar.c1 { background: linear-gradient(135deg, #6d5cff, #5a4de0); }
+        .avatar.c2 { background: linear-gradient(135deg, #3dc8d6, #2fb8c6); }
+        .avatar.c3 { background: linear-gradient(135deg, #e8963e, #d4852e); }
+        .avatar.c4 { background: linear-gradient(135deg, #3dd68c, #2cc67c); }
+        .avatar.c5 { background: linear-gradient(135deg, #e85454, #d44444); }
+
+        .team-name {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+            letter-spacing: -0.2px;
+        }
+
+        .team-role {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--accent-light);
+            margin-bottom: 14px;
+        }
+
+        .team-bio {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* ===== Project Info Section ===== */
+        .project-section {
+            padding: 56px 0;
+            border-top: 1px solid var(--border);
+        }
+        .project-section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        .project-section > .container > p.section-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+            max-width: 640px;
+            line-height: 1.8;
+            margin-bottom: 32px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .info-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: border-color 0.25s;
+        }
+        .info-card:hover {
+            border-color: var(--border-subtle);
+        }
+        .info-card-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .info-card-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .info-card-value.mono {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--accent-light);
+        }
+
+        /* ===== CTA ===== */
+        .cta-banner {
+            padding: 56px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .cta-banner h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+        .cta-banner p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .cta-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+        .cta-btn svg { width: 16px; height: 16px; }
+
+        /* ===== Footer ===== */
+        .footer {
+            padding: 24px 0;
+            border-top: 1px solid var(--border);
+        }
+        .footer .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .footer-links {
+            display: flex;
+            gap: 16px;
+        }
+        .footer-links a {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-links a:hover { color: var(--text-secondary); }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .page-header { padding: 48px 0 32px; }
+            .nav-links { display: none; }
+            .team-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr 1fr; }
+            .footer .container { flex-direction: column; gap: 8px; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Background texture -->
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-mark">B</div>
+            <div class="logo-name">Bongo<span>Script</span></div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Editor</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="/team.html" class="active">Team</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <div class="page-header-label">The Creators</div>
+        <h1>Meet the Team Behind BongoScript</h1>
+        <p>Built with passion as a Compiler Design project — five developers coming together to bring Bangla programming to life.</p>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="team-section">
+    <div class="container">
+        <div class="team-grid">
+
+            <div class="team-card">
+                <div class="avatar c1">OR</div>
+                <div class="team-name">O.F.M Rakibul Hasan</div>
+                <div class="team-role">Developer</div>
+                <p class="team-bio">Core contributor to the BongoScript transpiler, working on the language design and compilation pipeline.</p>
+            </div>
+
+            <div class="team-card">
+                <div class="avatar c2">ST</div>
+                <div class="team-name">S.M. Toha</div>
+                <div class="team-role">Developer</div>
+                <p class="team-bio">Worked on the lexer and parser integration, ensuring seamless tokenization and code generation.</p>
+            </div>
+
+            <div class="team-card">
+                <div class="avatar c3">AS</div>
+                <div class="team-name">Abdullah AL Sohan</div>
+                <div class="team-role">Developer</div>
+                <p class="team-bio">Focused on building the web-based IDE and real-time terminal interface for live code execution.</p>
+            </div>
+
+            <div class="team-card">
+                <div class="avatar c4">AH</div>
+                <div class="team-name">Aoulad Hossain Alif</div>
+                <div class="team-role">Developer</div>
+                <p class="team-bio">Contributed to grammar rules, testing BongoScript programs, and debugging the transpilation output.</p>
+            </div>
+
+            <div class="team-card">
+                <div class="avatar c5">MR</div>
+                <div class="team-name">Md Reduan Islam</div>
+                <div class="team-role">Developer</div>
+                <p class="team-bio">Helped with the backend server architecture, GCC integration, and the overall project deployment.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Project Info -->
+<section class="project-section">
+    <div class="container">
+        <h2>Project Details</h2>
+        <p class="section-desc">BongoScript is a Compiler Design course project that demonstrates the full pipeline of building a programming language from scratch.</p>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-card-label">Project Type</div>
+                <div class="info-card-value">Compiler Design</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Language</div>
+                <div class="info-card-value">BongoScript → C</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Lexer</div>
+                <div class="info-card-value mono">Flex</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Parser</div>
+                <div class="info-card-value mono">Bison</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Backend</div>
+                <div class="info-card-value mono">Node.js + Express</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Compiler</div>
+                <div class="info-card-value mono">GCC (MSYS2)</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Real-time I/O</div>
+                <div class="info-card-value mono">Socket.IO</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-label">Year</div>
+                <div class="info-card-value">2026</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-banner">
+    <div class="container">
+        <h2>Try BongoScript Yourself</h2>
+        <p>Open the live editor and start writing Bangla code that compiles to C.</p>
+        <a href="/" class="cta-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"></polygon></svg>
+            Open Editor
+        </a>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>BongoScript &copy; 2026</p>
+        <div class="footer-links">
+            <a href="/">Editor</a>
+            <a href="/about.html">About</a>
+            <a href="/team.html">Team</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
